@@ -7,6 +7,7 @@ const DATA_DIR = path.join(__dirname, "data");
 const DATA_FILE = path.join(DATA_DIR, "progress.json");
 const STATS_FILE = path.join(DATA_DIR, "stats.json");
 const CHART_FILE = path.join(DATA_DIR, "chart.svg");
+const STATS_MD_FILE = path.join(DATA_DIR, "STATS.md");
 
 const DEFAULT_DATA = {
   connects: { count: 0, weekStart: null },
@@ -165,17 +166,18 @@ if (!gotLock) {
     return { ok: true };
   });
 
-  ipcMain.handle("save-stats", (_event, { svg, report }) => {
+  ipcMain.handle("save-stats", (_event, { svg, report, markdown }) => {
     ensureDataFile();
     fs.writeFileSync(CHART_FILE, svg);
     fs.writeFileSync(STATS_FILE, JSON.stringify(report, null, 2));
+    if (markdown) fs.writeFileSync(STATS_MD_FILE, markdown);
     return { ok: true };
   });
 
   ipcMain.handle("sync-github", () => {
     return new Promise((resolve) => {
       const repoRoot = __dirname;
-      const files = ["data/progress.json", "data/stats.json", "data/chart.svg"];
+      const files = ["data/progress.json", "data/stats.json", "data/chart.svg", "data/STATS.md"];
 
       execFile("git", ["add", ...files], { cwd: repoRoot }, (addErr) => {
         if (addErr) {

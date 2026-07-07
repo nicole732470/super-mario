@@ -7,11 +7,7 @@ function localDateStr(d = new Date()) {
 }
 
 function mondayOf(date) {
-  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const weekday = d.getDay();
-  const diff = weekday === 0 ? -6 : 1 - weekday;
-  d.setDate(d.getDate() + diff);
-  return localDateStr(d);
+  return SproutStats.mondayOf(date);
 }
 
 function todayStr() {
@@ -23,31 +19,44 @@ function ensurePeriods(data) {
   const today = todayStr();
 
   if (!data.daily) data.daily = [];
+  if (!data.history) data.history = [];
 
-  if (data.connects.weekStart !== weekStart) {
-    if (data.connects.weekStart && data.connects.count > 0) {
-      data.history.push({
-        type: "connects",
-        period: data.connects.weekStart,
-        count: data.connects.count,
-      });
+  if (!data.connects?.weekStart) {
+    data.connects = { count: data.connects?.count || 0, weekStart };
+  } else if (data.connects.weekStart !== weekStart) {
+    if (data.connects.count > 0) {
+      const archived = data.history.some(
+        (h) => h.type === "connects" && h.period === data.connects.weekStart
+      );
+      if (!archived) {
+        data.history.push({
+          type: "connects",
+          period: data.connects.weekStart,
+          count: data.connects.count,
+        });
+      }
     }
     data.connects = { count: 0, weekStart };
   }
 
-  if (data.applications.date !== today) {
-    const prev = data.daily.find((d) => d.date === data.applications.date);
-    if (data.applications.date && !prev && data.applications.count > 0) {
-      data.daily.push({
-        date: data.applications.date,
-        connects: 0,
-        applications: data.applications.count,
-      });
+  if (!data.applications?.date) {
+    data.applications = { count: data.applications?.count || 0, date: today };
+  } else if (data.applications.date !== today) {
+    if (data.applications.count > 0) {
+      const archived = data.history.some(
+        (h) => h.type === "applications" && h.period === data.applications.date
+      );
+      if (!archived) {
+        data.history.push({
+          type: "applications",
+          period: data.applications.date,
+          count: data.applications.count,
+        });
+      }
     }
     data.applications = { count: 0, date: today };
   }
 
-  if (!data.history) data.history = [];
   if (data.history.length > 120) data.history = data.history.slice(-120);
 
   return SproutStats.upsertToday(data);
@@ -73,6 +82,13 @@ function updateUI(lastAction) {
   document.getElementById("count-connect").textContent = `${c}/${cGoal}`;
   document.getElementById("count-apply").textContent = `${a}/${aGoal}`;
 
+  const weekStart = state.connects.weekStart;
+  const weekEnd = weekStart ? SproutStats.weekEndLabel(weekStart) : "";
+  const connectSub = document.getElementById("period-connect");
+  const applySub = document.getElementById("period-apply");
+  if (connectSub) connectSub.textContent = weekStart ? `wk ${weekStart.slice(5)}–${weekEnd}` : "this week";
+  if (applySub) applySub.textContent = state.applications.date ? state.applications.date.slice(5) : "today";
+
   setProgress("connect", fillPct(c, cGoal));
   setProgress("apply", fillPct(a, aGoal));
 
@@ -86,10 +102,11 @@ function updateUI(lastAction) {
 
 async function save({ sync = true } = {}) {
   state = SproutStats.upsertToday(state);
-  const svg = SproutStats.buildChartSvg(state.daily, state.goals);
+  const svg = SproutStats.buildChartSvg(state, state.goals);
   const report = SproutStats.buildReport(state);
+  const markdown = SproutStats.buildStatsMarkdown(report);
   await window.sproutAPI.saveProgress(state);
-  await window.sproutAPI.saveStats({ svg, report });
+  await window.sproutAPI.saveStats({ svg, report, markdown });
   if (sync) scheduleAutoSync();
 }
 
@@ -135,6 +152,7 @@ async function addApply() {
   const prev = state.applications.count;
   const goal = state.goals.applicationsDaily;
   state.applications.count += 1;
+  SproutStats.addDaily(state, "applications", 1);
 
   SproutFX.step(document.getElementById("plot-apply"), "apply", state.applications.count, goal);
   updateUI("apply");

@@ -8,6 +8,7 @@
 </head>
 <body>
   <div class="scene" id="scene">
+    <button type="button" class="close-btn" id="close-btn" title="Quit (⌘⇧Q)" aria-label="Quit">×</button>
     <div class="tracks">
       <div class="track" id="plot-connect">
         <div class="stage">
@@ -17,7 +18,10 @@
             <div class="cloud c3"></div>
           </div>
           <div class="hud">
-            <span class="hud-label">CONNECT</span>
+            <div class="hud-left">
+              <span class="hud-label">CONNECT</span>
+              <span class="hud-period" id="period-connect">this week</span>
+            </div>
             <em id="count-connect">0/100</em>
           </div>
           <div class="trail"><div class="trail-fill" id="trail-connect"></div></div>
@@ -35,7 +39,10 @@
             <div class="cloud c3"></div>
           </div>
           <div class="hud">
-            <span class="hud-label">APPLY</span>
+            <div class="hud-left">
+              <span class="hud-label">APPLY</span>
+              <span class="hud-period" id="period-apply">today</span>
+            </div>
             <em id="count-apply">0/50</em>
           </div>
           <div class="trail"><div class="trail-fill" id="trail-apply"></div></div>

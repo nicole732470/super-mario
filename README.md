@@ -13,7 +13,14 @@ A tiny always-on-top desktop widget for tracking job-search outreach. Mario and 
 - **Satisfying feedback** — jump animation, retro sounds, combo text, and milestone pops
 - **Smart coach** — optional nudges when you're behind pace or on a streak
 - **Local-first data** — counts live in `data/progress.json`
-- **GitHub sync** — `⌘⇧S` commits and pushes `progress.json`, `stats.json`, and `chart.svg`
+- **GitHub sync** — `⌘⇧S` commits and pushes progress + trend charts to `data/STATS.md`
+
+## Trends on GitHub
+
+Open **[data/STATS.md](data/STATS.md)** on the repo for live charts:
+
+- **APPLY** — daily line chart (resets at midnight)
+- **CONNECT** — daily adds + weekly bar totals (resets every Monday)
 
 ## Shortcuts
 
@@ -22,7 +29,9 @@ A tiny always-on-top desktop widget for tracking job-search outreach. Mario and 
 | `⌘⇧C` | +1 connect |
 | `⌘⇧A` | +1 application |
 | `⌘⇧S` | Sync stats to GitHub |
+| `⌘⇧Q` | Quit Sprout |
 | Click / tap | +1 on the tapped track |
+| Right-click | Quit menu |
 | Drag | Move the widget |
 
 ## Getting started
