@@ -1,21 +1,21 @@
 {
-  "generatedAt": "2026-07-07T23:16:14.514Z",
+  "generatedAt": "2026-07-07T23:17:14.200Z",
   "goals": {
     "connectsWeekly": 100,
     "applicationsDaily": 50
   },
   "summary": {
     "last7Days": {
-      "applications": 6,
+      "applications": 7,
       "connects": 1,
-      "avgApplicationsPerDay": "6.0"
+      "avgApplicationsPerDay": "7.0"
     }
   },
   "daily": [
     {
       "date": "2026-07-07",
       "connects": 1,
-      "applications": 6
+      "applications": 7
     }
   ]
 }
