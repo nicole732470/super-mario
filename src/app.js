@@ -1,11 +1,9 @@
 let state = null;
 let toastTimer = null;
+let syncTimer = null;
 
 function localDateStr(d = new Date()) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+  return SproutStats.localDateStr(d);
 }
 
 function mondayOf(date) {
@@ -24,6 +22,8 @@ function ensurePeriods(data) {
   const weekStart = mondayOf(new Date());
   const today = todayStr();
 
+  if (!data.daily) data.daily = [];
+
   if (data.connects.weekStart !== weekStart) {
     if (data.connects.weekStart && data.connects.count > 0) {
       data.history.push({
@@ -36,31 +36,32 @@ function ensurePeriods(data) {
   }
 
   if (data.applications.date !== today) {
-    if (data.applications.date && data.applications.count > 0) {
-      data.history.push({
-        type: "applications",
-        period: data.applications.date,
-        count: data.applications.count,
+    const prev = data.daily.find((d) => d.date === data.applications.date);
+    if (data.applications.date && !prev && data.applications.count > 0) {
+      data.daily.push({
+        date: data.applications.date,
+        connects: 0,
+        applications: data.applications.count,
       });
     }
     data.applications = { count: 0, date: today };
   }
 
-  if (data.history.length > 120) {
-    data.history = data.history.slice(-120);
-  }
+  if (!data.history) data.history = [];
+  if (data.history.length > 120) data.history = data.history.slice(-120);
 
-  return data;
+  return SproutStats.upsertToday(data);
 }
 
-function growthStage(count, goal) {
-  const p = Math.min(count / goal, 1);
-  if (p <= 0) return "0";
-  if (p < 0.15) return "1";
-  if (p < 0.35) return "2";
-  if (p < 0.55) return "3";
-  if (p < 0.85) return "4";
-  return "5";
+function fillPct(count, goal) {
+  return Math.min(count / goal, 1);
+}
+
+function setProgress(type, pct) {
+  const hero = document.getElementById(`hero-${type}`);
+  const trail = document.getElementById(`trail-${type}`);
+  hero.style.transform = `translateX(${pct * SproutSprites.TRAVEL}px)`;
+  if (trail) trail.style.width = `${pct * 100}%`;
 }
 
 function updateUI(lastAction) {
@@ -71,24 +72,38 @@ function updateUI(lastAction) {
 
   document.getElementById("count-connect").textContent = `${c}/${cGoal}`;
   document.getElementById("count-apply").textContent = `${a}/${aGoal}`;
-  document.getElementById("goals-line").textContent = `${cGoal}/周 · ${aGoal}/日`;
 
-  document.getElementById("plant-connect").dataset.stage = growthStage(c, cGoal);
-  document.getElementById("plant-apply").dataset.stage = growthStage(a, aGoal);
+  setProgress("connect", fillPct(c, cGoal));
+  setProgress("apply", fillPct(a, aGoal));
 
-  document.getElementById("btn-connect").classList.toggle("done", c >= cGoal);
-  document.getElementById("btn-apply").classList.toggle("done", a >= aGoal);
-
-  document.getElementById("btn-undo-connect").disabled = c <= 0;
-  document.getElementById("btn-undo-apply").disabled = a <= 0;
+  document.getElementById("plot-connect").classList.toggle("done", c >= cGoal);
+  document.getElementById("plot-apply").classList.toggle("done", a >= aGoal);
 
   const coach = SproutCoach.buildCoach(state, lastAction);
   document.getElementById("coach-main").textContent = coach.main;
-  document.getElementById("coach-sub").textContent = coach.sub;
+  document.getElementById("coach-wrap").classList.toggle("hidden", !coach.show);
 }
 
 async function save() {
+  state = SproutStats.upsertToday(state);
+  const svg = SproutStats.buildChartSvg(state.daily, state.goals);
+  const report = SproutStats.buildReport(state);
   await window.sproutAPI.saveProgress(state);
+  await window.sproutAPI.saveStats({ svg, report });
+  scheduleAutoSync();
+}
+
+function scheduleAutoSync() {
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(autoSyncGithub, 2500);
+}
+
+async function autoSyncGithub() {
+  try {
+    await window.sproutAPI.syncGithub();
+  } catch {
+    /* silent background sync */
+  }
 }
 
 function showToast(msg) {
@@ -99,96 +114,79 @@ function showToast(msg) {
   toastTimer = setTimeout(() => el.classList.remove("show"), 1800);
 }
 
-function bump(el) {
-  el.classList.remove("bump");
-  void el.offsetWidth;
-  el.classList.add("bump");
-}
-
-function sparks(btn, color) {
-  const rect = btn.getBoundingClientRect();
-  const w = document.getElementById("widget").getBoundingClientRect();
-  for (let i = 0; i < 5; i++) {
-    const s = document.createElement("div");
-    s.className = "spark";
-    s.style.background = color;
-    s.style.left = `${rect.left - w.left + rect.width / 2}px`;
-    s.style.top = `${rect.top - w.top + 30}px`;
-    const a = (Math.PI * 2 * i) / 5;
-    s.style.setProperty("--tx", `${Math.cos(a) * 18}px`);
-    s.style.setProperty("--ty", `${Math.sin(a) * 18 - 10}px`);
-    document.getElementById("widget").appendChild(s);
-    setTimeout(() => s.remove(), 500);
-  }
-}
-
 async function addConnect() {
+  const prev = state.connects.count;
+  const goal = state.goals.connectsWeekly;
   state.connects.count += 1;
+  SproutStats.addDaily(state, "connects", 1);
+
+  SproutFX.step(document.getElementById("plot-connect"), "connect", state.connects.count, goal);
   updateUI("connect");
+
+  if (prev < goal && state.connects.count >= goal) {
+    SproutSounds.bloom();
+    SproutFX.victory(document.getElementById("plot-connect"));
+  }
+
   await save();
-  const btn = document.getElementById("btn-connect");
-  bump(btn);
-  sparks(btn, "#c4a8e8");
 }
 
 async function addApply() {
+  const prev = state.applications.count;
+  const goal = state.goals.applicationsDaily;
   state.applications.count += 1;
+
+  SproutFX.step(document.getElementById("plot-apply"), "apply", state.applications.count, goal);
   updateUI("apply");
-  await save();
-  const btn = document.getElementById("btn-apply");
-  bump(btn);
-  sparks(btn, "#f5c842");
-}
 
-async function undoConnect() {
-  if (state.connects.count <= 0) return;
-  state.connects.count -= 1;
-  updateUI();
-  await save();
-  showToast("已撤销");
-}
+  if (prev < goal && state.applications.count >= goal) {
+    SproutSounds.bloom();
+    SproutFX.victory(document.getElementById("plot-apply"));
+  }
 
-async function undoApply() {
-  if (state.applications.count <= 0) return;
-  state.applications.count -= 1;
-  updateUI();
   await save();
-  showToast("已撤销");
 }
 
 async function syncGithub() {
-  const btn = document.getElementById("btn-sync");
-  btn.classList.add("syncing");
-  btn.disabled = true;
   try {
+    await save();
     const r = await window.sproutAPI.syncGithub();
-    showToast(r.ok ? r.message : r.message.slice(0, 40));
-  } finally {
-    btn.classList.remove("syncing");
-    btn.disabled = false;
+    showToast(r.ok ? r.message : "Sync failed");
+  } catch {
+    showToast("Sync failed");
   }
 }
 
 async function init() {
+  window.SproutApp = { addConnect, addApply };
+
+  document.getElementById("hero-connect").innerHTML = SproutSprites.connect();
+  document.getElementById("hero-apply").innerHTML = SproutSprites.apply();
+  document.getElementById("goal-connect").innerHTML = SproutSprites.goal;
+  document.getElementById("goal-apply").innerHTML = SproutSprites.goal;
+
   let data = await window.sproutAPI.loadProgress();
   if (!data.goals) data.goals = { connectsWeekly: 100, applicationsDaily: 50 };
   if (!data.history) data.history = [];
+  if (!data.daily) data.daily = [];
   state = ensurePeriods(data);
   updateUI();
   await save();
 
-  document.getElementById("btn-connect").addEventListener("click", addConnect);
-  document.getElementById("btn-apply").addEventListener("click", addApply);
-  document.getElementById("btn-undo-connect").addEventListener("click", undoConnect);
-  document.getElementById("btn-undo-apply").addEventListener("click", undoApply);
-  document.getElementById("btn-sync").addEventListener("click", syncGithub);
-
   window.sproutAPI.onHotkey((action) => {
     if (action === "connect") addConnect();
     if (action === "apply") addApply();
+    if (action === "sync") syncGithub();
   });
 
-  setInterval(() => updateUI(), 60000);
+  setInterval(() => {
+    const next = ensurePeriods(structuredClone(state));
+    if (JSON.stringify(next) !== JSON.stringify(state)) {
+      state = next;
+      updateUI();
+      save();
+    }
+  }, 60000);
 }
 
 init();

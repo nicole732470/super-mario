@@ -1,6 +1,16 @@
 {
-  "connects": { "count": 0, "weekStart": null },
-  "applications": { "count": 0, "date": null },
-  "goals": { "connectsWeekly": 100, "applicationsDaily": 50 },
-  "history": []
+  "connects": {
+    "count": 0,
+    "weekStart": null
+  },
+  "applications": {
+    "count": 0,
+    "date": null
+  },
+  "goals": {
+    "connectsWeekly": 100,
+    "applicationsDaily": 50
+  },
+  "history": [],
+  "daily": []
 }

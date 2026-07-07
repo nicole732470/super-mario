@@ -1,2 +1,11 @@
 .DS_Store
 node_modules/
+
+# sprite crop experiments — keep only production assets
+assets/*
+!assets/mario.png
+!assets/luigi.png
+!assets/brick.png
+!assets/blocks.png
+!assets/players.png
+!assets/flag.svg

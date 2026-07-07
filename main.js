@@ -5,126 +5,182 @@ const { execFile } = require("child_process");
 
 const DATA_DIR = path.join(__dirname, "data");
 const DATA_FILE = path.join(DATA_DIR, "progress.json");
+const STATS_FILE = path.join(DATA_DIR, "stats.json");
+const CHART_FILE = path.join(DATA_DIR, "chart.svg");
 
 const DEFAULT_DATA = {
   connects: { count: 0, weekStart: null },
   applications: { count: 0, date: null },
   goals: { connectsWeekly: 100, applicationsDaily: 50 },
   history: [],
+  daily: [],
 };
 
-function ensureDataFile() {
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-  if (!fs.existsSync(DATA_FILE)) {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(DEFAULT_DATA, null, 2));
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  app.quit();
+} else {
+  function ensureDataFile() {
+    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+    if (!fs.existsSync(DATA_FILE)) {
+      fs.writeFileSync(DATA_FILE, JSON.stringify(DEFAULT_DATA, null, 2));
+    }
   }
-}
 
-function readData() {
-  ensureDataFile();
-  try {
-    return JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
-  } catch {
-    return structuredClone(DEFAULT_DATA);
+  function readData() {
+    ensureDataFile();
+    try {
+      return JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
+    } catch {
+      return structuredClone(DEFAULT_DATA);
+    }
   }
-}
 
-function writeData(data) {
-  ensureDataFile();
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
-}
+  function writeData(data) {
+    ensureDataFile();
+    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+  }
 
-let mainWindow;
+  let mainWindow;
+  let dragOffset = null;
 
-function createWindow() {
-  mainWindow = new BrowserWindow({
-    width: 220,
-    height: 300,
-    frame: false,
-    transparent: true,
-    resizable: false,
-    alwaysOnTop: true,
-    hasShadow: true,
-    webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
-      contextIsolation: true,
-      nodeIntegration: false,
-    },
-  });
+  function createWindow() {
+    if (mainWindow) return;
 
-  mainWindow.loadFile(path.join(__dirname, "src", "index.html"));
-  mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+    mainWindow = new BrowserWindow({
+      width: 214,
+      height: 168,
+      show: true,
+      frame: false,
+      transparent: true,
+      resizable: false,
+      alwaysOnTop: true,
+      hasShadow: false,
+      webPreferences: {
+        preload: path.join(__dirname, "preload.js"),
+        contextIsolation: true,
+        nodeIntegration: false,
+      },
+    });
 
-  mainWindow.webContents.on("did-finish-load", () => {
+    mainWindow.loadFile(path.join(__dirname, "src", "index.html"));
+    mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+
+    mainWindow.on("closed", () => {
+      mainWindow = null;
+      globalShortcut.unregisterAll();
+    });
+  }
+
+  function registerShortcuts() {
+    globalShortcut.unregisterAll();
+    if (!mainWindow) return;
+
     globalShortcut.register("CommandOrControl+Shift+C", () => {
       mainWindow.webContents.send("hotkey", "connect");
     });
     globalShortcut.register("CommandOrControl+Shift+A", () => {
       mainWindow.webContents.send("hotkey", "apply");
     });
+    globalShortcut.register("CommandOrControl+Shift+S", () => {
+      mainWindow.webContents.send("hotkey", "sync");
+    });
+  }
+
+  app.whenReady().then(() => {
+    createWindow();
+    mainWindow.webContents.on("did-finish-load", registerShortcuts);
   });
 
-  mainWindow.on("closed", () => {
-    globalShortcut.unregisterAll();
+  app.on("second-instance", () => {
+    if (!mainWindow) {
+      createWindow();
+      return;
+    }
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
   });
-}
 
-app.whenReady().then(createWindow);
+  app.on("window-all-closed", () => {
+    app.quit();
+  });
 
-app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") app.quit();
-});
+  app.on("activate", () => {
+    if (!mainWindow) createWindow();
+  });
 
-app.on("activate", () => {
-  if (BrowserWindow.getAllWindows().length === 0) createWindow();
-});
+  app.on("will-quit", () => globalShortcut.unregisterAll());
 
-app.on("will-quit", () => globalShortcut.unregisterAll());
+  ipcMain.on("drag-start", (event, pos) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (!win) return;
+    const [x, y] = win.getPosition();
+    dragOffset = { x: pos.screenX - x, y: pos.screenY - y };
+  });
 
-ipcMain.handle("load-progress", () => readData());
+  ipcMain.on("drag-move", (event, pos) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (!win || !dragOffset) return;
+    win.setPosition(pos.screenX - dragOffset.x, pos.screenY - dragOffset.y);
+  });
 
-ipcMain.handle("save-progress", (_event, data) => {
-  writeData(data);
-  return { ok: true };
-});
+  ipcMain.on("drag-end", () => {
+    dragOffset = null;
+  });
 
-ipcMain.handle("sync-github", () => {
-  return new Promise((resolve) => {
-    const repoRoot = __dirname;
-    const relPath = "data/progress.json";
+  ipcMain.handle("load-progress", () => readData());
 
-    execFile("git", ["add", relPath], { cwd: repoRoot }, (addErr) => {
-      if (addErr) {
-        resolve({ ok: false, message: addErr.message });
-        return;
-      }
+  ipcMain.handle("save-progress", (_event, data) => {
+    writeData(data);
+    return { ok: true };
+  });
 
-      const d = new Date();
-      const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-      execFile(
-        "git",
-        ["commit", "-m", `progress: ${date}`],
-        { cwd: repoRoot },
-        (commitErr, _stdout, stderr) => {
-          const nothing = stderr && stderr.includes("nothing to commit");
-          if (commitErr && !nothing) {
-            resolve({ ok: false, message: commitErr.message });
-            return;
-          }
-          if (nothing) {
-            resolve({ ok: true, message: "已是最新" });
-            return;
-          }
+  ipcMain.handle("save-stats", (_event, { svg, report }) => {
+    ensureDataFile();
+    fs.writeFileSync(CHART_FILE, svg);
+    fs.writeFileSync(STATS_FILE, JSON.stringify(report, null, 2));
+    return { ok: true };
+  });
 
-          execFile("git", ["push"], { cwd: repoRoot }, (pushErr, _o, pushErrOut) => {
-            if (pushErr) {
-              resolve({ ok: false, message: pushErrOut || pushErr.message });
+  ipcMain.handle("sync-github", () => {
+    return new Promise((resolve) => {
+      const repoRoot = __dirname;
+      const files = ["data/progress.json", "data/stats.json", "data/chart.svg"];
+
+      execFile("git", ["add", ...files], { cwd: repoRoot }, (addErr) => {
+        if (addErr) {
+          resolve({ ok: false, message: addErr.message });
+          return;
+        }
+
+        const d = new Date();
+        const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        execFile(
+          "git",
+          ["commit", "-m", `stats: ${date}`],
+          { cwd: repoRoot },
+          (commitErr, _stdout, stderr) => {
+            const nothing = stderr && stderr.includes("nothing to commit");
+            if (commitErr && !nothing) {
+              resolve({ ok: false, message: commitErr.message });
               return;
             }
-            resolve({ ok: true, message: "已同步 ✓" });
-          });
-        }
-      );
+            if (nothing) {
+              resolve({ ok: true, message: "Already up to date" });
+              return;
+            }
+
+            execFile("git", ["push"], { cwd: repoRoot }, (pushErr, _o, pushErrOut) => {
+              if (pushErr) {
+                resolve({ ok: false, message: pushErrOut || pushErr.message });
+                return;
+              }
+              resolve({ ok: true, message: "Synced" });
+            });
+          }
+        );
+      });
     });
   });
-});
+}

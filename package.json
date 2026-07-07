@@ -1,7 +1,7 @@
 {
   "name": "sprout",
   "version": "1.0.0",
-  "description": "Desktop plant tracker for LinkedIn connects and job applications",
+  "description": "Always-on-top desktop widget — Mario/Luigi tracks LinkedIn connects and job applications",
   "main": "main.js",
   "scripts": {
     "start": "env -u ELECTRON_RUN_AS_NODE electron ."

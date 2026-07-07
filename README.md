@@ -1,24 +1,54 @@
-# Sprout 🌱
+# Sprout
 
-桌面悬浮小组件，用两盆会生长的植物追踪求职进度。
+A tiny always-on-top desktop widget for tracking job-search outreach. Mario and Luigi walk toward the flag as you log progress — tap to +1, drag anywhere to move the window.
 
-| 指标 | 周期 | 默认目标 |
-|------|------|----------|
-| LinkedIn Connect | 每周 | 100 |
-| PM 岗位投递 | 每天 | 50 |
+| Track | Metric | Period | Default goal |
+|-------|--------|--------|--------------|
+| **CONNECT** | LinkedIn connects | Weekly | 100 |
+| **APPLY** | Job applications | Daily | 50 |
 
-## 特点
+## Features
 
-- **植物生长**：点击花盆 +1，从种子 → 发芽 → 长叶 → 开花
-- **智能提示**：根据剩余目标、时间进度、连续天数给出建议
-- **本地运行**：数据存在 `data/progress.json`，可一键同步 GitHub
-- **快捷键**：`⌘⇧C` Connect · `⌘⇧A` 投递
+- **Mini side-scroller UI** — each track is a short stage with a hero, ground, coin trail, and goal flag
+- **Satisfying feedback** — jump animation, retro sounds, combo text, and milestone pops
+- **Smart coach** — optional nudges when you're behind pace or on a streak
+- **Local-first data** — counts live in `data/progress.json`
+- **GitHub sync** — `⌘⇧S` commits and pushes `progress.json`, `stats.json`, and `chart.svg`
 
-## 启动
+## Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `⌘⇧C` | +1 connect |
+| `⌘⇧A` | +1 application |
+| `⌘⇧S` | Sync stats to GitHub |
+| Click / tap | +1 on the tapped track |
+| Drag | Move the widget |
+
+## Getting started
 
 ```bash
 npm install
 npm start
 ```
 
-拖顶部标题栏移动窗口。修改目标请编辑 `data/progress.json` 中的 `goals`。
+## Configuration
+
+Edit goals in `data/progress.json`:
+
+```json
+{
+  "goals": {
+    "connectsWeekly": 100,
+    "applicationsDaily": 50
+  }
+}
+```
+
+## Stack
+
+Electron + vanilla HTML/CSS/JS. Sprites are cropped from classic Mario tile sheets for a retro look; the sky and HUD use a softer modern palette.
+
+## License
+
+Personal project — use and fork freely.
