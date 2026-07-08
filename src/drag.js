@@ -38,4 +38,16 @@
   document.getElementById("scene").addEventListener("mousedown", onDown);
   window.addEventListener("mousemove", onMove);
   window.addEventListener("mouseup", onUp);
+
+  document.getElementById("scene").addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    window.sproutAPI.showContextMenu();
+  });
+
+  const closeBtn = document.getElementById("close-btn");
+  closeBtn.addEventListener("mousedown", (e) => e.stopPropagation());
+  closeBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    window.sproutAPI.quit();
+  });
 })();

@@ -132,7 +132,6 @@ function showToast(msg) {
 }
 
 async function addConnect() {
-  const prev = state.connects.count;
   const goal = state.goals.connectsWeekly;
   state.connects.count += 1;
   SproutStats.addDaily(state, "connects", 1);
@@ -140,7 +139,7 @@ async function addConnect() {
   SproutFX.step(document.getElementById("plot-connect"), "connect", state.connects.count, goal);
   updateUI("connect");
 
-  if (prev < goal && state.connects.count >= goal) {
+  if (state.connects.count >= goal) {
     SproutSounds.bloom();
     SproutFX.victory(document.getElementById("plot-connect"));
   }
@@ -149,7 +148,6 @@ async function addConnect() {
 }
 
 async function addApply() {
-  const prev = state.applications.count;
   const goal = state.goals.applicationsDaily;
   state.applications.count += 1;
   SproutStats.addDaily(state, "applications", 1);
@@ -157,7 +155,7 @@ async function addApply() {
   SproutFX.step(document.getElementById("plot-apply"), "apply", state.applications.count, goal);
   updateUI("apply");
 
-  if (prev < goal && state.applications.count >= goal) {
+  if (state.applications.count >= goal) {
     SproutSounds.bloom();
     SproutFX.victory(document.getElementById("plot-apply"));
   }
