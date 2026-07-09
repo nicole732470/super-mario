@@ -1,5 +1,7 @@
 .DS_Store
 node_modules/
+dist/
+build/icon.iconset/
 
 # sprite crop experiments — keep only production assets
 assets/*

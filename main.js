@@ -3,7 +3,19 @@ const path = require("path");
 const fs = require("fs");
 const { execFile } = require("child_process");
 
-const DATA_DIR = path.join(__dirname, "data");
+function getRepoRoot() {
+  if (process.env.SPROUT_REPO && fs.existsSync(process.env.SPROUT_REPO)) {
+    return process.env.SPROUT_REPO;
+  }
+  if (!app.isPackaged) return __dirname;
+  const defaultRepo = path.join(app.getPath("home"), "Desktop", "APPLY", "sprout");
+  if (fs.existsSync(path.join(defaultRepo, ".git"))) return defaultRepo;
+  return app.getPath("userData");
+}
+
+const REPO_ROOT = getRepoRoot();
+const APP_ROOT = app.isPackaged ? app.getAppPath() : __dirname;
+const DATA_DIR = path.join(REPO_ROOT, "data");
 const DATA_FILE = path.join(DATA_DIR, "progress.json");
 const STATS_FILE = path.join(DATA_DIR, "stats.json");
 const CHART_FILE = path.join(DATA_DIR, "chart.svg");
@@ -58,13 +70,13 @@ if (!gotLock) {
       alwaysOnTop: true,
       hasShadow: false,
       webPreferences: {
-        preload: path.join(__dirname, "preload.js"),
+        preload: path.join(APP_ROOT, "preload.js"),
         contextIsolation: true,
         nodeIntegration: false,
       },
     });
 
-    mainWindow.loadFile(path.join(__dirname, "src", "index.html"));
+    mainWindow.loadFile(path.join(APP_ROOT, "src", "index.html"));
     mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
 
     mainWindow.on("closed", () => {
@@ -176,7 +188,7 @@ if (!gotLock) {
 
   ipcMain.handle("sync-github", () => {
     return new Promise((resolve) => {
-      const repoRoot = __dirname;
+      const repoRoot = REPO_ROOT;
       const files = ["data/progress.json", "data/stats.json", "data/chart.svg", "data/STATS.md"];
 
       execFile("git", ["add", ...files], { cwd: repoRoot }, (addErr) => {

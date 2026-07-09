@@ -41,6 +41,31 @@ npm install
 npm start
 ```
 
+## Mac app (double-click to launch)
+
+Build a real `.app` with Dock icon:
+
+```bash
+npm install
+npm run install:app
+```
+
+This installs **Sprout** to `/Applications`. Then open it from Launchpad, Spotlight, or double-click in Applications.
+
+Rebuild after code changes:
+
+```bash
+npm run install:app
+```
+
+Dev mode still works with `npm start`. The packaged app reads/writes data in this repo (`data/`) so GitHub sync keeps working.
+
+Optional: set a custom repo path for sync/data:
+
+```bash
+export SPROUT_REPO=/path/to/sprout
+```
+
 ## Configuration
 
 Edit goals in `data/progress.json`:

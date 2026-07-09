@@ -1,12 +1,45 @@
 {
   "name": "sprout",
+  "productName": "Sprout",
   "version": "1.0.0",
   "description": "Always-on-top desktop widget — Mario/Luigi tracks LinkedIn connects and job applications",
   "main": "main.js",
+  "author": "Nicole",
   "scripts": {
-    "start": "env -u ELECTRON_RUN_AS_NODE electron ."
+    "start": "env -u ELECTRON_RUN_AS_NODE electron .",
+    "build:icon": "python3 scripts/build-icon.py",
+    "build:mac": "npm run build:icon && electron-builder --mac dir",
+    "install:app": "bash scripts/install-mac-app.sh"
+  },
+  "build": {
+    "appId": "com.nicole.sprout",
+    "productName": "Sprout",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "assets/mario.png",
+      "assets/luigi.png",
+      "assets/brick.png",
+      "assets/blocks.png",
+      "assets/players.png",
+      "assets/flag.svg",
+      "package.json"
+    ],
+    "asar": true,
+    "mac": {
+      "category": "public.app-category.productivity",
+      "icon": "build/icon.icns",
+      "target": [
+        "dir"
+      ]
+    }
   },
   "devDependencies": {
-    "electron": "^33.2.1"
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8"
   }
 }
