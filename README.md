@@ -27,7 +27,18 @@ Personal desktop widget for tracking job-search outreach. Mario and Luigi walk t
 | Right-click | Menu |
 | Drag | Move widget |
 
-## Run locally
+## Run
+
+**Easiest (no Terminal):**
+
+```bash
+npm run install:app
+```
+
+Installs `/Applications/Super Mario.app`, opens it, and sets **Open at Login**.
+After that: Spotlight (`⌘Space` → Super Mario) or Launchpad.
+
+**Dev / one-off:**
 
 ```bash
 npm install

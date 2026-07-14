@@ -11,6 +11,8 @@ function getRepoRoot() {
     return process.env.SPROUT_REPO;
   }
   if (!app.isPackaged) return __dirname;
+  // Always prefer the renamed git repo. Never write into a leftover
+  // Desktop/APPLY/sprout folder that has no .git (sync would silently fail).
   const candidates = [
     path.join(app.getPath("home"), "Desktop", "APPLY", "super-mario"),
     path.join(app.getPath("home"), "Desktop", "APPLY", "sprout"),
@@ -115,6 +117,14 @@ if (!gotLock) {
   }
 
   app.whenReady().then(() => {
+    // Packaged .app: launch at login, no Terminal needed.
+    if (app.isPackaged) {
+      app.setLoginItemSettings({
+        openAtLogin: true,
+        openAsHidden: false,
+        path: process.execPath,
+      });
+    }
     createWindow();
     mainWindow.webContents.on("did-finish-load", registerShortcuts);
   });
@@ -197,6 +207,13 @@ if (!gotLock) {
   ipcMain.handle("sync-github", () => {
     return new Promise((resolve) => {
       const repoRoot = REPO_ROOT;
+      if (!fs.existsSync(path.join(repoRoot, ".git"))) {
+        resolve({
+          ok: false,
+          message: `No git repo at ${repoRoot}. Point MARIO_REPO at the super-mario checkout.`,
+        });
+        return;
+      }
       const files = ["data/progress.json", "data/stats.json", "data/chart.svg", "data/STATS.md"];
 
       execFile("git", ["add", ...files], { cwd: repoRoot }, (addErr) => {
