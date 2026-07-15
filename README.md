@@ -1,6 +1,6 @@
 # Super Mario
 
-Personal desktop widget for tracking job-search outreach. Mario and Luigi walk toward the flag as you log progress — tap to +1, drag anywhere to move the window.
+Desktop habit widget: Mario/Luigi walk toward the flag. Tap to **jump up and bonk the `?` block** — each bump is +1. Drag anywhere to move the window.
 
 | Track | Metric | Period | Default goal |
 |-------|--------|--------|--------------|
@@ -9,27 +9,26 @@ Personal desktop widget for tracking job-search outreach. Mario and Luigi walk t
 
 ## Features
 
-- Mini side-scroller UI with jump sounds and goal fanfare
+- Classic Mario bump: hop into a floating `?` block — coin sound + trail progress (scales to 100)
 - CONNECT resets every Monday · APPLY resets every midnight
 - Data in `data/progress.json`, auto-syncs to GitHub
 - Trend charts in **[data/STATS.md](data/STATS.md)**
 
-## Shortcuts
+## Try it (no Mac app install)
 
-| Shortcut | Action |
-|----------|--------|
-| `⌘⇧C` | +1 connect |
-| `⌘⇧A` | +1 application |
-| `⌘⇧S` | Sync to GitHub |
-| `⌘⇧R` | Reset counts to 0 |
-| `⌘⇧Q` | Quit |
-| Click / tap | +1 on tapped track |
-| Right-click | Menu |
-| Drag | Move widget |
+Open the browser demo — same bump feel, no Electron needed:
 
-## Run
+→ **[demo/index.html](demo/index.html)** (clone the repo, open that file in Safari/Chrome)
 
-**Easiest (no Terminal):**
+Or after clone:
+
+```bash
+open demo/index.html
+```
+
+## Run the desktop widget (Mac)
+
+**Easiest (no Terminal after install):**
 
 ```bash
 npm run install:app
@@ -44,6 +43,19 @@ After that: Spotlight (`⌘Space` → Super Mario) or Launchpad.
 npm install
 npm start
 ```
+
+## Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `⌘⇧C` | +1 connect |
+| `⌘⇧A` | +1 application |
+| `⌘⇧S` | Sync to GitHub |
+| `⌘⇧R` | Reset counts to 0 |
+| `⌘⇧Q` | Quit |
+| Click / tap | bump `?` block on that track |
+| Right-click | Menu |
+| Drag | Move widget |
 
 ## Goals
 

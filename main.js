@@ -72,7 +72,7 @@ if (!gotLock) {
 
     mainWindow = new BrowserWindow({
       width: 214,
-      height: 168,
+      height: 204,
       show: true,
       frame: false,
       transparent: true,

@@ -85,11 +85,11 @@ const SproutSounds = (() => {
     unlock,
     clickConnect: () => {
       jump(300, 600);
-      setTimeout(() => coinArpeggio([1318.51, 1567.98, 2093.0]), 35);
+      setTimeout(() => coinArpeggio([1318.51, 1567.98, 2093.0]), 110);
     },
     clickApply: () => {
       jump(240, 520);
-      setTimeout(() => coinArpeggio([1046.5, 1318.51, 1760.0]), 35);
+      setTimeout(() => coinArpeggio([1046.5, 1318.51, 1760.0]), 110);
     },
     bloom: () => goalFanfare(),
   };

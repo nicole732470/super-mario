@@ -67,7 +67,7 @@ html, body {
 
 .stage {
   position: relative;
-  height: 60px;
+  height: 78px;
   overflow: hidden;
   background: linear-gradient(175deg, #c9daf0 0%, #dce8f4 35%, #edf2f7 70%, #f4f7fa 100%);
 }
@@ -234,23 +234,36 @@ html, body {
   background: linear-gradient(90deg, #fb7185, #ef4444);
 }
 
-.hero {
+/* hero + ? block travel together; clear air gap so hop must reach up */
+.runner {
   position: absolute;
   bottom: 13px;
   left: 0;
-  z-index: 4;
+  z-index: 5;
+  width: 28px;
+  height: 58px;
   transition: transform 0.18s ease-out;
+  pointer-events: none;
 }
 
-.hero .hero-img {
+.runner .hero {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  z-index: 4;
+}
+
+.runner .hero-img {
   display: block;
+  width: 28px;
+  height: 28px;
   image-rendering: pixelated;
   pointer-events: none;
   animation: idle-bob 0.9s ease-in-out infinite alternate;
 }
 
-.hero.hop .hero-img {
-  animation: hero-hop 0.38s ease-out forwards;
+.runner.hop .hero-img {
+  animation: hero-hop 0.42s ease-out forwards;
 }
 
 @keyframes idle-bob {
@@ -258,12 +271,35 @@ html, body {
   to { transform: translateY(-2px); }
 }
 
+/* hop peaks ~14px — closes the 12px gap and kisses the block */
 @keyframes hero-hop {
   0% { transform: translateY(0) scale(1); }
-  30% { transform: translateY(-22px) scale(1.05); }
-  55% { transform: translateY(-8px) scale(1); }
-  75% { transform: translateY(-14px) scale(1.02); }
+  28% { transform: translateY(-14px) scale(1.04); }
+  42% { transform: translateY(-11px) scale(1); }
+  70% { transform: translateY(-4px) scale(1); }
   100% { transform: translateY(0) scale(1); }
+}
+
+.qblock {
+  position: absolute;
+  left: 6px;
+  bottom: 40px; /* hero 28 + 12px air gap */
+  width: 16px;
+  height: 16px;
+  image-rendering: pixelated;
+  z-index: 5;
+  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.15));
+}
+
+.runner.hop .qblock {
+  animation: block-bonk 0.42s ease-out;
+}
+
+@keyframes block-bonk {
+  0%, 24% { transform: translateY(0); }
+  38% { transform: translateY(-8px); }
+  58% { transform: translateY(1px); }
+  100% { transform: translateY(0); }
 }
 
 .stage.shake {
@@ -352,8 +388,9 @@ html, body {
 }
 
 @keyframes pop-up {
-  0% { opacity: 1; transform: translateY(0); }
-  100% { opacity: 0; transform: translateY(-20px); }
+  0% { opacity: 0; transform: translateY(4px) scale(0.8); }
+  20% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-20px) scale(1.12); }
 }
 
 @keyframes dust-puff {

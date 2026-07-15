@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Super Mario — try the bump</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #eef2f6;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+      padding: 24px 16px;
+      color: #475569;
+    }
+    .note {
+      max-width: 260px;
+      font-size: 12px;
+      line-height: 1.5;
+      color: #64748b;
+      margin-bottom: 14px;
+    }
+    .scene {
+      position: relative;
+      width: 204px;
+      padding: 5px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .tracks { display: flex; flex-direction: column; gap: 10px; }
+    .track {
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
+      cursor: pointer;
+    }
+    .stage {
+      position: relative;
+      height: 78px;
+      overflow: hidden;
+      background: linear-gradient(175deg, #c9daf0 0%, #dce8f4 35%, #edf2f7 70%, #f4f7fa 100%);
+    }
+    .cloud {
+      position: absolute;
+      border-radius: 50px;
+      background: rgba(255, 255, 255, 0.82);
+      pointer-events: none;
+    }
+    .cloud.c1 {
+      width: 38px; height: 13px; top: 11px; left: 8%;
+      box-shadow: 14px -5px 0 -3px rgba(255,255,255,.7), 28px -2px 0 -4px rgba(255,255,255,.55);
+    }
+    .cloud.c2 {
+      width: 28px; height: 10px; top: 24px; left: 55%; opacity: .75;
+      box-shadow: 10px -3px 0 -2px rgba(255,255,255,.65);
+    }
+    .hud {
+      position: absolute; top: 3px; left: 8px; right: 8px; z-index: 6;
+      display: flex; justify-content: space-between; align-items: flex-start;
+      pointer-events: none;
+    }
+    .hud-label {
+      font-size: 9px; font-weight: 600; letter-spacing: 0.04em;
+      color: rgba(51, 65, 85, 0.75);
+    }
+    .hud em {
+      font-style: normal; font-size: 10px; font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      display: inline-block;
+    }
+    #t0 .hud em { color: #b45309; }
+    #t1 .hud em { color: #dc2626; }
+    .hud em.bump { animation: num-bump 0.25s ease-out; }
+    @keyframes num-bump { 50% { transform: scale(1.2); } }
+
+    .trail {
+      position: absolute;
+      bottom: 12px; left: 6px; right: 22px;
+      height: 3px; z-index: 3;
+      background: rgba(255, 255, 255, 0.45);
+      border-radius: 3px; overflow: hidden;
+    }
+    .trail-fill {
+      height: 100%; width: 0%;
+      border-radius: 3px;
+      transition: width 0.2s ease-out;
+    }
+    #t0 .trail-fill { background: linear-gradient(90deg, #fbbf24, #f59e0b); }
+    #t1 .trail-fill { background: linear-gradient(90deg, #fb7185, #ef4444); }
+
+    .ground {
+      position: absolute; bottom: 0; left: 0; right: 0; height: 12px; z-index: 2;
+      background-image: url("./assets/brick.png");
+      background-size: 12px 12px;
+      background-repeat: repeat-x;
+      image-rendering: pixelated;
+      box-shadow: inset 0 2px 0 rgba(255,255,255,0.15);
+    }
+
+    /* hero + q-block travel together; clear air gap so hop must reach up */
+    .runner {
+      position: absolute;
+      bottom: 13px;
+      left: 0;
+      z-index: 5;
+      width: 28px;
+      height: 58px;
+      transition: transform 0.18s ease-out;
+      pointer-events: none;
+    }
+    .hero {
+      position: absolute;
+      left: 0; bottom: 0;
+      z-index: 4;
+    }
+    .hero .hero-img {
+      display: block;
+      width: 28px;
+      height: 28px;
+      image-rendering: pixelated;
+      pointer-events: none;
+      animation: idle-bob 0.9s ease-in-out infinite alternate;
+    }
+    .runner.hop .hero .hero-img {
+      animation: hero-hop 0.42s ease-out forwards;
+    }
+    @keyframes idle-bob {
+      from { transform: translateY(0); }
+      to { transform: translateY(-2px); }
+    }
+    /* hop peaks ~14px — closes the 12px gap and kisses the block */
+    @keyframes hero-hop {
+      0% { transform: translateY(0) scale(1); }
+      28% { transform: translateY(-14px) scale(1.04); }
+      42% { transform: translateY(-11px) scale(1); }
+      70% { transform: translateY(-4px) scale(1); }
+      100% { transform: translateY(0) scale(1); }
+    }
+
+    /* ? block hangs above head with clear gap (not glued on) */
+    .qblock {
+      position: absolute;
+      left: 6px;
+      bottom: 40px; /* hero 28 + 12px air gap */
+      width: 16px;
+      height: 16px;
+      image-rendering: pixelated;
+      z-index: 5;
+      filter: drop-shadow(0 1px 0 rgba(0,0,0,0.15));
+    }
+    .runner.hop .qblock {
+      animation: block-bonk 0.42s ease-out;
+    }
+    /* bonk starts when head arrives (~28% of hop) */
+    @keyframes block-bonk {
+      0%, 24% { transform: translateY(0); }
+      38% { transform: translateY(-8px); }
+      58% { transform: translateY(1px); }
+      100% { transform: translateY(0); }
+    }
+
+    .goal {
+      position: absolute;
+      right: 4px;
+      bottom: 11px;
+      z-index: 4;
+    }
+    .goal-flag {
+      display: block;
+      image-rendering: pixelated;
+      pointer-events: none;
+      opacity: 0.9;
+    }
+    .track.done .goal-flag {
+      animation: flag-win 0.5s ease-in-out infinite alternate;
+    }
+    @keyframes flag-win {
+      from { transform: rotate(-4deg); }
+      to { transform: rotate(4deg) scale(1.05); }
+    }
+
+    .stage.shake { animation: stage-shake 0.28s ease-out; }
+    @keyframes stage-shake {
+      0%, 100% { transform: translateX(0); }
+      33% { transform: translateX(-2px); }
+      66% { transform: translateX(2px); }
+    }
+
+    .coin-burst {
+      position: absolute;
+      z-index: 8;
+      left: 5px;
+      bottom: 56px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #f59e0b;
+      pointer-events: none;
+      animation: coin-up 0.55s ease-out forwards;
+    }
+    #t1 .coin-burst { color: #ef4444; }
+    @keyframes coin-up {
+      0% { opacity: 0; transform: translateY(4px) scale(0.8); }
+      20% { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-20px) scale(1.12); }
+    }
+
+    .coach {
+      display: inline-block;
+      background: #fff;
+      border-radius: 999px;
+      padding: 7px 14px;
+      font-size: 12px;
+      color: #475569;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+      min-width: 130px;
+      text-align: center;
+    }
+    .coach-wrap { margin-top: 2px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div>
+    <p class="note">
+      Browser demo of the desktop widget. Tap a track — jump up, bonk the ? block, +1.
+      Progress uses the counter + trail (works for 12 or 100). Same feel as the Mac app.
+    </p>
+    <div class="scene">
+      <div class="tracks">
+        <div class="track" id="t0" data-id="0">
+          <div class="stage">
+            <div class="cloud c1"></div><div class="cloud c2"></div>
+            <div class="hud"><span class="hud-label">CONNECT</span><em id="c0">0/100</em></div>
+            <div class="trail"><div class="trail-fill" id="fill0"></div></div>
+            <div class="ground"></div>
+            <div class="runner" id="r0">
+              <div class="qblock" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges">
+                  <rect width="16" height="16" fill="#e8a838"/>
+                  <rect x="1" y="1" width="14" height="14" fill="#f0c848"/>
+                  <rect x="2" y="2" width="12" height="1" fill="#ffe99a"/>
+                  <rect x="2" y="13" width="12" height="1" fill="#c47a18"/>
+                  <rect x="13" y="2" width="1" height="12" fill="#c47a18"/>
+                  <rect x="2" y="2" width="1" height="12" fill="#ffe99a"/>
+                  <!-- ? -->
+                  <rect x="6" y="3" width="4" height="2" fill="#7a3e0c"/>
+                  <rect x="9" y="5" width="2" height="2" fill="#7a3e0c"/>
+                  <rect x="7" y="7" width="2" height="2" fill="#7a3e0c"/>
+                  <rect x="7" y="10" width="2" height="2" fill="#7a3e0c"/>
+                  <rect x="1" y="1" width="2" height="2" fill="#5a2e08"/>
+                  <rect x="13" y="1" width="2" height="2" fill="#5a2e08"/>
+                  <rect x="1" y="13" width="2" height="2" fill="#5a2e08"/>
+                  <rect x="13" y="13" width="2" height="2" fill="#5a2e08"/>
+                </svg>
+              </div>
+              <div class="hero">
+                <img class="hero-img" src="./assets/luigi.png" width="28" height="28" alt="" draggable="false" />
+              </div>
+            </div>
+            <div class="goal" id="g0"></div>
+          </div>
+        </div>
+        <div class="track" id="t1" data-id="1">
+          <div class="stage">
+            <div class="cloud c1"></div><div class="cloud c2"></div>
+            <div class="hud"><span class="hud-label">APPLY</span><em id="c1">0/50</em></div>
+            <div class="trail"><div class="trail-fill" id="fill1"></div></div>
+            <div class="ground"></div>
+            <div class="runner" id="r1">
+              <div class="qblock" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges">
+                  <rect width="16" height="16" fill="#e8a838"/>
+                  <rect x="1" y="1" width="14" height="14" fill="#f0c848"/>
+                  <rect x="2" y="2" width="12" height="1" fill="#ffe99a"/>
+                  <rect x="2" y="13" width="12" height="1" fill="#c47a18"/>
+                  <rect x="13" y="2" width="1" height="12" fill="#c47a18"/>
+                  <rect x="2" y="2" width="1" height="12" fill="#ffe99a"/>
+                  <rect x="6" y="3" width="4" height="2" fill="#7a3e0c"/>
+                  <rect x="9" y="5" width="2" height="2" fill="#7a3e0c"/>
+                  <rect x="7" y="7" width="2" height="2" fill="#7a3e0c"/>
+                  <rect x="7" y="10" width="2" height="2" fill="#7a3e0c"/>
+                  <rect x="1" y="1" width="2" height="2" fill="#5a2e08"/>
+                  <rect x="13" y="1" width="2" height="2" fill="#5a2e08"/>
+                  <rect x="1" y="13" width="2" height="2" fill="#5a2e08"/>
+                  <rect x="13" y="13" width="2" height="2" fill="#5a2e08"/>
+                </svg>
+              </div>
+              <div class="hero">
+                <img class="hero-img" src="./assets/mario.png" width="28" height="28" alt="" draggable="false" />
+              </div>
+            </div>
+            <div class="goal" id="g1"></div>
+          </div>
+        </div>
+      </div>
+      <div class="coach-wrap"><p class="coach" id="coach">Tap to bump the block</p></div>
+    </div>
+  </div>
+  <script>
+    const FLAG = `<svg class="goal-flag" viewBox="0 0 16 32" width="16" height="32" aria-hidden="true">
+      <rect x="7" y="5" width="2" height="26" fill="#ddd"/>
+      <rect x="6" y="3" width="4" height="3" fill="#aaa"/>
+      <rect x="9" y="4" width="6" height="5" fill="#2ecc40"/>
+      <rect x="9" y="4" width="6" height="2" fill="#5efc4a"/>
+      <rect x="6" y="2" width="4" height="2" fill="#e74c3c"/>
+    </svg>`;
+    document.getElementById("g0").innerHTML = FLAG;
+    document.getElementById("g1").innerHTML = FLAG;
+
+    const TRAVEL = 140;
+    const goals = [100, 50]; // shows 100 works — no coin row
+    const state = [12, 5];
+    const lines = ["Nice!", "Let's-a go!", "Bump!", "Keep going!", "Yes!"];
+
+    const Sounds = (() => {
+      let ctx = null;
+      async function ac() {
+        if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (ctx.state === "suspended") await ctx.resume();
+        return ctx;
+      }
+      async function jump(a, b) {
+        const c = await ac();
+        const t = c.currentTime;
+        const osc = c.createOscillator(), g = c.createGain();
+        osc.type = "square";
+        osc.frequency.setValueAtTime(a, t);
+        osc.frequency.linearRampToValueAtTime(b, t + 0.09);
+        g.gain.setValueAtTime(0.08, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
+        osc.connect(g); g.connect(c.destination);
+        osc.start(t); osc.stop(t + 0.16);
+      }
+      async function coin(freqs) {
+        const c = await ac();
+        const t = c.currentTime;
+        freqs.forEach((freq, i) => {
+          const osc = c.createOscillator(), g = c.createGain();
+          osc.type = "square"; osc.frequency.value = freq;
+          const s = t + i * 0.03;
+          g.gain.setValueAtTime(0.07, s);
+          g.gain.exponentialRampToValueAtTime(0.001, s + 0.12);
+          osc.connect(g); g.connect(c.destination);
+          osc.start(s); osc.stop(s + 0.14);
+        });
+      }
+      async function bloom() {
+        const c = await ac();
+        const t = c.currentTime;
+        [[659.25,0],[659.25,0.1],[659.25,0.2],[523.25,0.3],[659.25,0.4],[783.99,0.55],[392.0,0.75]]
+          .forEach(([freq, delay]) => {
+            const osc = c.createOscillator(), g = c.createGain();
+            osc.type = "square"; osc.frequency.value = freq;
+            const s = t + delay;
+            g.gain.setValueAtTime(0.07, s);
+            g.gain.exponentialRampToValueAtTime(0.001, s + 0.2);
+            osc.connect(g); g.connect(c.destination);
+            osc.start(s); osc.stop(s + 0.22);
+          });
+      }
+      return {
+        unlock: () => ac().catch(() => {}),
+        t1: () => { jump(300, 600); setTimeout(() => coin([1318.51, 1567.98, 2093.0]), 110); },
+        t2: () => { jump(240, 520); setTimeout(() => coin([1046.5, 1318.51, 1760.0]), 110); },
+        bloom,
+      };
+    })();
+
+    function paint(id) {
+      const n = state[id], goal = goals[id];
+      const pct = Math.min(n / goal, 1);
+      document.getElementById("c" + id).textContent = n + "/" + goal;
+      document.getElementById("fill" + id).style.width = pct * 100 + "%";
+      document.getElementById("r" + id).style.transform = `translateX(${pct * TRAVEL}px)`;
+      document.getElementById("t" + id).classList.toggle("done", n >= goal);
+    }
+
+    document.querySelectorAll(".track").forEach((track) => {
+      track.addEventListener("click", () => {
+        Sounds.unlock();
+        const id = +track.dataset.id;
+        if (state[id] >= goals[id]) {
+          document.getElementById("coach").textContent = "Goal!";
+          Sounds.bloom();
+          return;
+        }
+        state[id]++;
+        paint(id);
+        if (id === 0) Sounds.t1(); else Sounds.t2();
+
+        const runner = document.getElementById("r" + id);
+        runner.classList.remove("hop");
+        void runner.offsetWidth;
+        runner.classList.add("hop");
+
+        const stage = track.querySelector(".stage");
+        stage.classList.remove("shake");
+        void stage.offsetWidth;
+        stage.classList.add("shake");
+
+        const burst = document.createElement("div");
+        burst.className = "coin-burst";
+        burst.textContent = "+1";
+        // pop out when head hits the block (~120ms into hop)
+        setTimeout(() => {
+          runner.appendChild(burst);
+          setTimeout(() => burst.remove(), 550);
+        }, 120);
+
+        const em = document.getElementById("c" + id);
+        em.classList.remove("bump");
+        void em.offsetWidth;
+        em.classList.add("bump");
+
+        const left = goals[id] - state[id];
+        document.getElementById("coach").textContent =
+          left === 0 ? "Goal!" : left <= 5 ? left + " to go!" : lines[(Math.random() * lines.length) | 0];
+        if (left === 0) Sounds.bloom();
+      });
+    });
+
+    paint(0); paint(1);
+  </script>
+</body>
+</html>

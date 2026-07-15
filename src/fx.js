@@ -4,7 +4,7 @@ const SproutFX = (() => {
   const MILESTONES = [5, 10, 25, 50, 75, 100];
 
   const QUIPS = {
-    connect: ["+1!", "Nice!", "Let's go!", "Jump!"],
+    connect: ["+1!", "Nice!", "Let's go!", "Bump!"],
     apply: ["+1!", "Wahoo!", "Send it!", "Yes!"],
   };
 
@@ -25,17 +25,18 @@ const SproutFX = (() => {
 
   function coinPop(plotEl, kind, count, goal) {
     const layer = document.getElementById("fx-layer");
-    const hero = plotEl.querySelector(".hero");
+    const runner = plotEl.querySelector(".runner");
+    const qblock = runner?.querySelector(".qblock");
     const scene = document.getElementById("scene").getBoundingClientRect();
-    const hRect = hero.getBoundingClientRect();
+    const anchor = (qblock || runner).getBoundingClientRect();
     const left = count;
     const leftN = Math.max(goal - count, 0);
 
     const el = document.createElement("div");
     el.className = "coin-pop";
     el.textContent = quip(kind);
-    el.style.left = `${hRect.left - scene.left + 4}px`;
-    el.style.top = `${hRect.top - scene.top - 4}px`;
+    el.style.left = `${anchor.left - scene.left + 2}px`;
+    el.style.top = `${anchor.top - scene.top - 6}px`;
     layer.appendChild(el);
     setTimeout(() => el.remove(), 600);
 
@@ -43,17 +44,18 @@ const SproutFX = (() => {
       const hint = document.createElement("div");
       hint.className = "milestone-pop";
       hint.textContent = leftN === 0 ? "GOAL!" : `${leftN} to go!`;
-      hint.style.left = `${hRect.left - scene.left - 4}px`;
-      hint.style.top = `${hRect.top - scene.top - 18}px`;
+      hint.style.left = `${anchor.left - scene.left - 4}px`;
+      hint.style.top = `${anchor.top - scene.top - 18}px`;
       layer.appendChild(hint);
       setTimeout(() => hint.remove(), 900);
     }
 
+    const feet = runner.getBoundingClientRect();
     for (let i = 0; i < 4; i++) {
       const d = document.createElement("div");
       d.className = "dust";
-      d.style.left = `${hRect.left - scene.left + 8 + i * 5}px`;
-      d.style.top = `${hRect.bottom - scene.top - 6}px`;
+      d.style.left = `${feet.left - scene.left + 6 + i * 5}px`;
+      d.style.top = `${feet.bottom - scene.top - 4}px`;
       layer.appendChild(d);
       setTimeout(() => d.remove(), 450);
     }
@@ -61,17 +63,17 @@ const SproutFX = (() => {
 
   function step(plotEl, kind, count, goal) {
     bumpCombo();
-    const hero = plotEl.querySelector(".hero");
+    const runner = plotEl.querySelector(".runner");
     const stage = plotEl.querySelector(".stage");
     const hud = plotEl.querySelector(".hud em");
 
-    hero.classList.remove("hop");
+    runner.classList.remove("hop");
     stage.classList.remove("shake");
-    void hero.offsetWidth;
-    hero.classList.add("hop");
-    hero.querySelector(".hero-img")?.addEventListener(
+    void runner.offsetWidth;
+    runner.classList.add("hop");
+    runner.querySelector(".hero-img")?.addEventListener(
       "animationend",
-      () => hero.classList.remove("hop"),
+      () => runner.classList.remove("hop"),
       { once: true }
     );
     stage.classList.add("shake");
@@ -82,7 +84,8 @@ const SproutFX = (() => {
     }
 
     setTimeout(() => stage.classList.remove("shake"), 300);
-    coinPop(plotEl, kind, count, goal);
+    // pop out when head hits the block (~120ms into hop)
+    setTimeout(() => coinPop(plotEl, kind, count, goal), 120);
     SproutSounds.clickConnect && (kind === "connect" ? SproutSounds.clickConnect() : SproutSounds.clickApply());
   }
 
