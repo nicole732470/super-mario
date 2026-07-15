@@ -18,13 +18,15 @@ Desktop habit widget: Mario/Luigi walk toward the flag. Tap to **jump up and bon
 
 Open the browser demo — same bump feel, no Electron needed:
 
-→ **[demo/index.html](demo/index.html)** (clone the repo, open that file in Safari/Chrome)
-
-Or after clone:
+→ **[demo/index.html](https://github.com/nicole732470/super-mario/blob/main/demo/index.html)** — clone the repo, then:
 
 ```bash
 open demo/index.html
 ```
+
+(Or drag `demo/index.html` into Safari/Chrome.)
+
+Want a one-click public link? In the repo **Settings → Pages → Deploy from branch → `/docs`**, then the try URL becomes `https://nicole732470.github.io/super-mario/`.
 
 ## Run the desktop widget (Mac)
 
