@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-17T20:47:58.570Z",
+  "generatedAt": "2026-07-17T20:48:30.639Z",
   "goals": {
     "connectsWeekly": 100,
     "applicationsDaily": 50
@@ -9,7 +9,7 @@
       "type": "weekly",
       "weekStart": "2026-07-13",
       "weekEnd": "07-19",
-      "count": 40,
+      "count": 42,
       "goal": 100
     },
     "apply": {
@@ -22,7 +22,7 @@
   "summary": {
     "last7Days": {
       "applications": 32,
-      "connectsDailyAdds": 40,
+      "connectsDailyAdds": 42,
       "avgApplicationsPerDay": "4.6"
     }
   },
@@ -33,7 +33,7 @@
     },
     {
       "weekStart": "2026-07-13",
-      "total": 40,
+      "total": 42,
       "current": true
     }
   ],
@@ -80,7 +80,7 @@
     },
     {
       "date": "2026-07-17",
-      "connects": 11,
+      "connects": 13,
       "applications": 0
     }
   ]
