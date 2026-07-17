@@ -5,7 +5,7 @@
   },
   "applications": {
     "count": 0,
-    "date": "2026-07-16"
+    "date": "2026-07-17"
   },
   "goals": {
     "connectsWeekly": 100,
@@ -92,6 +92,11 @@
     {
       "date": "2026-07-16",
       "connects": 1,
+      "applications": 0
+    },
+    {
+      "date": "2026-07-17",
+      "connects": 0,
       "applications": 0
     }
   ]
