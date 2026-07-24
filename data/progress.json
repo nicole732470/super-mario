@@ -4,7 +4,7 @@
     "weekStart": "2026-07-20"
   },
   "applications": {
-    "count": 13,
+    "count": 14,
     "date": "2026-07-24"
   },
   "goals": {
@@ -162,7 +162,7 @@
     {
       "date": "2026-07-24",
       "connects": 1,
-      "applications": 13
+      "applications": 14
     }
   ]
 }
