@@ -4,8 +4,8 @@
     "weekStart": "2026-07-20"
   },
   "applications": {
-    "count": 25,
-    "date": "2026-07-24"
+    "count": 0,
+    "date": "2026-07-25"
   },
   "goals": {
     "connectsWeekly": 100,
@@ -86,6 +86,11 @@
       "type": "applications",
       "period": "2026-07-23",
       "count": 21
+    },
+    {
+      "type": "applications",
+      "period": "2026-07-24",
+      "count": 25
     }
   ],
   "daily": [
@@ -163,6 +168,11 @@
       "date": "2026-07-24",
       "connects": 60,
       "applications": 25
+    },
+    {
+      "date": "2026-07-25",
+      "connects": 0,
+      "applications": 0
     }
   ]
 }
