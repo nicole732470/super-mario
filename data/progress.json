@@ -1,11 +1,11 @@
 {
   "connects": {
-    "count": 121,
-    "weekStart": "2026-07-20"
+    "count": 0,
+    "weekStart": "2026-07-27"
   },
   "applications": {
-    "count": 0,
-    "date": "2026-07-25"
+    "count": 1,
+    "date": "2026-07-28"
   },
   "goals": {
     "connectsWeekly": 100,
@@ -91,6 +91,11 @@
       "type": "applications",
       "period": "2026-07-24",
       "count": 25
+    },
+    {
+      "type": "connects",
+      "period": "2026-07-20",
+      "count": 121
     }
   ],
   "daily": [
@@ -173,6 +178,11 @@
       "date": "2026-07-25",
       "connects": 0,
       "applications": 0
+    },
+    {
+      "date": "2026-07-28",
+      "connects": 0,
+      "applications": 1
     }
   ]
 }
